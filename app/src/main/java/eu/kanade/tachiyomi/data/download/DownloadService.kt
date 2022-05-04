@@ -158,18 +158,22 @@ class DownloadService : Service() {
     private fun onNetworkStateChanged() {
         if (isOnline()) {
             if (preferences.downloadOnlyOverWifi() && !isConnectedToWifi()) {
-                stopDownloads(R.string.download_notifier_text_only_wifi)
+                handleNetworkUnavailable(R.string.download_notifier_text_only_wifi)
             } else {
                 val started = downloadManager.startDownloads()
                 if (!started) stopSelf()
             }
         } else {
-            stopDownloads(R.string.download_notifier_no_network)
+            handleNetworkUnavailable(R.string.download_notifier_no_network)
         }
     }
 
-    private fun stopDownloads(@StringRes string: Int) {
-        downloadManager.stopDownloads(getString(string))
+    private fun handleNetworkUnavailable(@StringRes message: Int) {
+        // stop current downloads with a error notification
+        downloadManager.stopDownloads(getString(message))
+
+        // stop the service to prevent it from lingering in the background
+        stopSelf()
     }
 
     /**
