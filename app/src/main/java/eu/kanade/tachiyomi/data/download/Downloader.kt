@@ -138,7 +138,7 @@ class Downloader(
     /**
      * Stops the downloader.
      */
-    fun stop(reason: String? = null) {
+    fun stop(reason: String? = null, suppressCompletionNotification: Boolean = false) {
         destroySubscriptions()
         queue
             .filter { it.status == Download.State.DOWNLOADING }
@@ -151,7 +151,7 @@ class Downloader(
 
         if (notifier.paused && !queue.isEmpty()) {
             notifier.onPaused()
-        } else {
+        } else if (!suppressCompletionNotification) {
             notifier.onComplete()
         }
 

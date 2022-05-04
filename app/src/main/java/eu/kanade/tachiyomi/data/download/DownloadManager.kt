@@ -82,8 +82,8 @@ class DownloadManager(
      *
      * @param reason an optional reason for being stopped, used to notify the user.
      */
-    fun stopDownloads(reason: String? = null) {
-        downloader.stop(reason)
+    fun stopDownloads(reason: String? = null, suppressCompletionNotification: Boolean = false) {
+        downloader.stop(reason, suppressCompletionNotification)
     }
 
     /**

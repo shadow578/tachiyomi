@@ -90,6 +90,11 @@ class DownloadService : Service() {
     private lateinit var ioScope: CoroutineScope
 
     /**
+     * flag to indicate if the downloader stopped because no network was available
+     */
+    private var stoppedNoNetwork: Boolean = false
+
+    /**
      * Called when the service is created.
      */
     override fun onCreate() {
@@ -107,10 +112,10 @@ class DownloadService : Service() {
      * Called when the service is destroyed.
      */
     override fun onDestroy() {
-        ioScope?.cancel()
+        ioScope.cancel()
         runningRelay.call(false)
         subscriptions.unsubscribe()
-        downloadManager.stopDownloads()
+        downloadManager.stopDownloads(suppressCompletionNotification = stoppedNoNetwork)
         wakeLock.releaseIfNeeded()
         super.onDestroy()
     }
@@ -171,6 +176,7 @@ class DownloadService : Service() {
     private fun handleNetworkUnavailable(@StringRes message: Int) {
         // stop current downloads with a error notification
         downloadManager.stopDownloads(getString(message))
+        stoppedNoNetwork = true
 
         // stop the service to prevent it from lingering in the background
         stopSelf()
