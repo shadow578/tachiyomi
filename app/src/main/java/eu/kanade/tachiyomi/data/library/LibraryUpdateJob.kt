@@ -22,8 +22,9 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
     override fun doWork(): Result {
         val preferences = Injekt.get<PreferencesHelper>()
-        if (requiresWifiConnection(preferences) && !context.isConnectedToWifi()) {
-            Result.failure()
+        val restrictions = preferences.libraryUpdateDeviceRestriction().get()
+        if ((DEVICE_ONLY_ON_WIFI in restrictions) && !context.isConnectedToWifi()) {
+            return Result.failure()
         }
 
         return if (LibraryUpdateService.start(context)) {
@@ -42,7 +43,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
             if (interval > 0) {
                 val restrictions = preferences.libraryUpdateDeviceRestriction().get()
                 val constraints = Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .setRequiredNetworkType(if (DEVICE_ONLY_ON_WIFI in restrictions) { NetworkType.UNMETERED } else { NetworkType.CONNECTED })
                     .setRequiresCharging(DEVICE_CHARGING in restrictions)
                     .setRequiresBatteryNotLow(DEVICE_BATTERY_NOT_LOW in restrictions)
                     .build()
@@ -61,11 +62,6 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
             } else {
                 WorkManager.getInstance(context).cancelAllWorkByTag(TAG)
             }
-        }
-
-        fun requiresWifiConnection(preferences: PreferencesHelper): Boolean {
-            val restrictions = preferences.libraryUpdateDeviceRestriction().get()
-            return DEVICE_ONLY_ON_WIFI in restrictions
         }
     }
 }
